@@ -46,7 +46,7 @@ class EnrollAggregation(SpacetimeAggregation):
                 parallel=parallel)
 
     def get_aggregates(self, date, delta):
-        enroll = self.inputs[0].get_result()
+        enroll = self.inputs[0].result
         aggregates = [
             Aggregate('medical_risk', 'any', fname=False),
             Aggregate(['household_size', 'household_income'], 
@@ -89,7 +89,7 @@ class BirthAggregation(SpacetimeAggregation):
                 parallel=parallel)
 
     def get_aggregates(self, date, delta):
-        births = self.inputs[0].get_result()
+        births = self.inputs[0].result
         aggregates = [
             Aggregate('length', 'max', fname=False),
             Aggregate('weight', 'max', fname=False),
@@ -125,7 +125,7 @@ class PrenatalAggregation(SpacetimeAggregation):
                 parallel=parallel)
 
     def get_aggregates(self, date, delta):
-        prenatal = self.inputs[0].get_result()
+        prenatal = self.inputs[0].result
 
         aggregates = [
             Count(),

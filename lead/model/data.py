@@ -32,8 +32,8 @@ class LeadData(Step):
             year_max: the year to stop generating features
             wic_lag: a lag for the WIC aggregations, parsed by
                 drain.data.parse_delta, e.g. '6m' is a six month lag.
-                Defaultis to None, which is no lag.
-            dtype: the dtype to use for features. Defaults to np.float16.
+                Default is to None, which is no lag.
+            dtype: the dtype to use for features. Defaults to np.float16 for memory efficiency.
             address: whether to build an address dataset. Defaults to False,
                 which builds a kid dataset.
         """
@@ -83,20 +83,21 @@ class LeadData(Step):
                 sample weights, and evaluation.
         """
         if self.address:
-            index_columns = ['address','date']
+            index_columns = ['address', 'census_block_id', 'ward_id', 'community_area_id', 'date']
+            left_columns = ['address_lat', 'address_lng']
         if not self.address:
             index_columns = ['kid_id', 'address_id', 'date']
+            left_columns = ['ward_id', 'community_area_id', 'address_lat', 'address_lng']
 
-        left_columns = ['ward_id', 'community_area_id', 'address_lat', 'address_lng']
         left = left[index_columns + left_columns]
 
         logging.info('Binarizing community area and ward')
-        left = data.binarize(left, ['community_area_id', 'ward_id'], astype=self.dtype)
+        left = data.binarize(left, ['community_area_id', 'ward_id'], astype=self.dtype, drop=(not self.address))
 
         logging.info('Joining aggregations')
-        X = left.join([a.get_result() for a in self.aggregation_joins] + [acs])
+        X = left.join([a.result for a in self.aggregation_joins] + [acs])
         # delete all aggregation inputs so that memory can be freed
-        for a in self.aggregation_joins: del a._result
+        for a in self.aggregation_joins: del a.result
 
         if not self.address:
             logging.info('Adding auxillary features')

@@ -6,7 +6,38 @@ import pandas as pd
 import numpy as np
 import logging
 
-addresses = FromSQL(table='output.addresses')
+# in addition to all addresses, we add all cells in the partition
+# created by intersecting blocks, wards and communities 
+# in anticipation of any new addresses in deployment
+addresses = FromSQL("""
+with blocks as (
+select
+    b.geoid10::double precision census_block_id,
+    substring(b.geoid10 for 11)::double precision census_tract_id,
+    c.area_numbe::int community_area_id,
+    w.ward::int ward_id
+from input.census_blocks b
+join input.community_areas c
+    on st_intersects(b.geom, c.geom)
+join input.wards w
+    on st_intersects(b.geom, w.geom) and st_intersects(c.geom, w.geom)
+group by 1,2,3,4
+)
+select
+    null address,
+    null address_lat,
+    null address_lng,
+    null as address_id,
+    null as building_id,
+    null as complex_id, *
+from blocks
+UNION ALL
+select address, address_lat, address_lng, 
+    address_id, building_id, complex_id,
+    census_block_id, census_tract_id, 
+    community_area_id, ward_id
+from output.addresses
+    """, tables=['output.addresses', 'input.census_blocks', 'input.census_tracts', 'input.community_areas', 'input.wards'])
 addresses.target = True
 
 class LeadAddressLeft(Step):

@@ -14,19 +14,23 @@ class LeadTransform(Step):
     performing feature selection and creating sample weights.
     """
     def __init__(self, inputs, outcome_expr, aggregations,
-            wic_sample_weight=0, exclude=[], include=[]):
+            outcome_where_expr=None, wic_sample_weight=0,
+            exclude=[], include=[]):
         """
         Args:
             inputs: list containing a LeadCrossValidate step
             outcome_expr: the query to perform on the auxillary information to produce an outcome variable
             aggregations: defines which of the SpacetimeAggregations to include
-            and which to drop
+                and which to drop
+            outcome_where_expr: where to evaluate the outcome_expr,
+                defaults to None, which means everywhere
             wic_sample_weight: optional different sample weight for wic kids
         """
         Step.__init__(self,
                 inputs=inputs,
                 outcome_expr=outcome_expr,
                 aggregations=aggregations,
+                outcome_where_expr=outcome_where_expr,
                 wic_sample_weight=wic_sample_weight, 
                 exclude=exclude, include=include)
 
@@ -40,6 +44,8 @@ class LeadTransform(Step):
 
         """
         y = aux.eval(self.outcome_expr)
+        if self.outcome_where_expr is not None:
+            y = y.where(aux.eval(self.outcome_where_expr))
 
         logging.info('Selecting aggregations')
         aggregations = self.get_input(LeadData).aggregations

@@ -143,7 +143,8 @@ def bll6_models(estimators, cv_search={}, transform_search={}):
     transformd = dict(
         wic_sample_weight=[0],
         aggregations=aggregations.args,
-        outcome_expr=['max_bll0 >= 6']
+        outcome_expr='max_bll0 >= 6',
+        outcome_where_expr='max_bll0 == max_bll0' # this means max_bll0.notnull()
     )
     transformd.update(transform_search)
     return models(estimators, cvd, transformd)
